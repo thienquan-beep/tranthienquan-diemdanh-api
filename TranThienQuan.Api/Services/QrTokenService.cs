@@ -26,11 +26,12 @@ public class QrTokenService
 
     public int ConLaiGiay() => ChuKyGiay - (int)(_gio.GetUtcNow().ToUnixTimeSeconds() % ChuKyGiay);
 
-    // Chấp nhận khung hiện tại và khung liền trước (trễ mạng, quét sát lúc đổi mã)
+    // Chấp nhận khung hiện tại và 2 khung trước (60–90 giây): sau khi quét, sinh viên còn
+    // xác thực khuôn mặt, chụp selfie, lấy GPS rồi mới gửi
     public bool KiemTra(BuoiHoc b, string token)
     {
         var slot = SlotHienTai();
-        return token == Token(b, slot) || token == Token(b, slot - 1);
+        return token == Token(b, slot) || token == Token(b, slot - 1) || token == Token(b, slot - 2);
     }
 
     public static bool TachPayload(string payload, out int buoiId, out string token)

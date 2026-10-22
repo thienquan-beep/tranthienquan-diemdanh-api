@@ -71,6 +71,8 @@ public class AuthController : ControllerBase
     {
         var u = await _um.FindByNameAsync(req.UserName);
         if (u == null) return NotFound(new ThongBao("Không tìm thấy tài khoản"));
+        var chan = KiemTraChan(u);
+        if (chan != null) return chan;
         var loi = LoiOtp(await _otp.KiemTraAsync(u, "DangNhap", req.Otp));
         if (loi != null) return loi;
         return Ok(await TaoAuthResponseAsync(u));
@@ -83,6 +85,10 @@ public class AuthController : ControllerBase
             return BadRequest(new ThongBao("Mục đích không hợp lệ"));
         var u = await _um.FindByNameAsync(req.UserName);
         if (u == null) return NotFound(new ThongBao("Không tìm thấy tài khoản"));
+        if (u.LockoutEnd > DateTimeOffset.UtcNow) return StatusCode(403, new ThongBao("Tài khoản đã bị khóa"));
+        // OTP đăng nhập chỉ được gửi lại sau khi đã nhập đúng mật khẩu (đã có mã trước đó)
+        if (req.MucDich == "DangNhap" && !await _otp.CoMaAsync(u, "DangNhap"))
+            return BadRequest(new ThongBao("Vui lòng đăng nhập bằng mật khẩu trước"));
         await _otp.TaoVaGuiAsync(u, req.MucDich);
         return Ok(new ThongBao("Đã gửi lại mã OTP"));
     }

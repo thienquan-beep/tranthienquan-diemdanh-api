@@ -36,11 +36,21 @@ public class QrTokenServiceTests
     }
 
     [Fact]
-    public void TokenHaiKhungTruocHetHan()
+    public void TokenHaiKhungTruocVanHopLe()
     {
+        // Sinh viên cần thời gian xác thực khuôn mặt + selfie + GPS sau khi quét
         var s = new QrTokenService(_gio);
         var token = Token(s.TaoPayload(_buoi));
         _gio.Advance(TimeSpan.FromSeconds(60));
+        Assert.True(s.KiemTra(_buoi, token));
+    }
+
+    [Fact]
+    public void TokenBaKhungTruocHetHan()
+    {
+        var s = new QrTokenService(_gio);
+        var token = Token(s.TaoPayload(_buoi));
+        _gio.Advance(TimeSpan.FromSeconds(90));
         Assert.False(s.KiemTra(_buoi, token));
     }
 

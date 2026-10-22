@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TranThienQuan.Api.Dtos;
 using TranThienQuan.Api.Models;
 using TranThienQuan.Api.Repositories;
@@ -78,7 +79,16 @@ public class SinhVienController : ControllerBase
             TrangThai = ngoaiBanKinh ? TrangThaiDiemDanh.CoMatNghiVan : TrangThaiDiemDanh.CoMat,
             NghiVan = ngoaiBanKinh, AnhSelfie = $"/uploads/{tenFile}", MaThietBi = form.MaThietBi,
         };
-        await _ddRepo.AddAsync(d);
+        try
+        {
+            await _ddRepo.AddAsync(d);
+        }
+        catch (DbUpdateException)
+        {
+            // Hai lượt quét đồng thời: lượt sau vấp unique index (buổi, sinh viên)
+            System.IO.File.Delete(Path.Combine(thuMuc, tenFile));
+            return Conflict(new ThongBao("Bạn đã điểm danh buổi này"));
+        }
         return Ok(DiemDanhMap.ToDto((await _ddRepo.GetByIdAsync(d.Id))!));
     }
 }

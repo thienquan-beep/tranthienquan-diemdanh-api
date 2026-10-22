@@ -12,4 +12,5 @@ public interface IDiemDanhRepository
     Task AddAsync(DiemDanh diemDanh);
     Task UpdateAsync(DiemDanh diemDanh);
     Task DeleteAsync(int id);
+    Task BoTheoDoiAsync(DiemDanh diemDanh);
 }

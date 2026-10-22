@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TranThienQuan.Api.Dtos;
 using TranThienQuan.Api.Models;
 using TranThienQuan.Api.Repositories;
@@ -111,10 +112,21 @@ public class BuoiController : ControllerBase
             var daCo = (await _ddRepo.GetCuaBuoiAsync(id)).Select(d => d.SinhVienId).ToHashSet();
             foreach (var sv in await _lopRepo.GetSinhVienAsync(b.LopHocPhanId))
                 if (!daCo.Contains(sv.Id))
-                    await _ddRepo.AddAsync(new DiemDanh
+                {
+                    var vang = new DiemDanh
                     {
                         BuoiHocId = id, SinhVienId = sv.Id, ThoiDiem = BayGio, CachThuc = "Tay", TrangThai = TrangThaiDiemDanh.Vang,
-                    });
+                    };
+                    try
+                    {
+                        await _ddRepo.AddAsync(vang);
+                    }
+                    catch (DbUpdateException)
+                    {
+                        // Sinh viên vừa quét xong đúng lúc đóng buổi: giữ bản ghi quét
+                        await _ddRepo.BoTheoDoiAsync(vang);
+                    }
+                }
         }
         return Ok(await ToDtoAsync(b));
     }

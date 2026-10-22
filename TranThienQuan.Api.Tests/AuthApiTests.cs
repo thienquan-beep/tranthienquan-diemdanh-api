@@ -95,6 +95,41 @@ public class AuthApiTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task TaiKhoanBiKhoaKhongVuotQuaDuocBangGuiLaiOtp()
+    {
+        var admin = await _f.DangNhapAsync("admin");
+        var r = await admin.PostAsJsonAsync("/api/tranthienquan/nguoi-dung", new
+        {
+            hoTen = "Sẽ Bị Khóa", email = "sekhoa@test.vn", userName = "sekhoa", password = "Sv@12345", vaiTro = "SinhVien", biKhoa = false,
+        });
+        var id = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+        // Đăng nhập bước 1 khi chưa khóa → có OTP trong mail
+        await _c.PostAsJsonAsync("/api/tranthienquan/auth/dang-nhap", new { userName = "sekhoa", password = "Sv@12345" });
+        var otp = _f.Email.LayOtp("sekhoa@test.vn");
+
+        await admin.PutAsJsonAsync($"/api/tranthienquan/nguoi-dung/{id}", new
+        {
+            hoTen = "Sẽ Bị Khóa", email = "sekhoa@test.vn", userName = "sekhoa", password = (string?)null, vaiTro = "SinhVien", biKhoa = true,
+        });
+
+        var xn = await _c.PostAsJsonAsync("/api/tranthienquan/auth/xac-nhan-dang-nhap", new { userName = "sekhoa", otp });
+        Assert.Equal(HttpStatusCode.Forbidden, xn.StatusCode);
+        var guiLai = await _c.PostAsJsonAsync("/api/tranthienquan/auth/gui-lai-otp", new { userName = "sekhoa", mucDich = "DangNhap" });
+        Assert.Equal(HttpStatusCode.Forbidden, guiLai.StatusCode);
+    }
+
+    [Fact]
+    public async Task GuiLaiOtpDangNhapPhaiQuaBuocMatKhauTruoc()
+    {
+        // sv03 là tài khoản demo: không được lấy OTP đăng nhập khi chưa nhập đúng mật khẩu
+        var r = await _c.PostAsJsonAsync("/api/tranthienquan/auth/gui-lai-otp", new { userName = "sv03", mucDich = "DangNhap" });
+        Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
+        Assert.Equal("Vui lòng đăng nhập bằng mật khẩu trước", await Message(r));
+        var xn = await _c.PostAsJsonAsync("/api/tranthienquan/auth/xac-nhan-dang-nhap", new { userName = "sv03", otp = "123456" });
+        Assert.Equal(HttpStatusCode.BadRequest, xn.StatusCode);
+    }
+
+    [Fact]
     public async Task ToiKhongTokenThi401()
     {
         var r = await _c.GetAsync("/api/tranthienquan/auth/toi");

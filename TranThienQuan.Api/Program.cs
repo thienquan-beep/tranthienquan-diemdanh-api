@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -10,8 +11,17 @@ using TranThienQuan.Api.Models;
 using TranThienQuan.Api.Repositories;
 using TranThienQuan.Api.Services;
 
+// Số thập phân (tọa độ GPS) luôn dùng dấu chấm, không phụ thuộc văn hóa của máy chủ
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
 var builder = WebApplication.CreateBuilder(args);
 var laTest = builder.Environment.IsEnvironment("Testing");
+
+// Khóa JWT trong appsettings.json chỉ dùng khi dev; khi deploy phải đặt biến môi trường Jwt__Key
+const string KhoaJwtDev = "tranthienquan-2380601849-khoa-bi-mat-dev-chi-dung-local";
+if (builder.Environment.IsProduction() && builder.Configuration["Jwt:Key"] == KhoaJwtDev)
+    throw new InvalidOperationException("Chưa đặt Jwt:Key riêng cho môi trường Production (biến môi trường Jwt__Key)");
 
 // CSDL: SQL Server; khi chạy test dùng InMemory
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

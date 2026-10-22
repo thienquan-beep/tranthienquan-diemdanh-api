@@ -57,7 +57,7 @@ public class LopController : ControllerBase
         if (await _monRepo.GetByIdAsync(req.MonHocId) == null) return BadRequest(new ThongBao("Môn học không tồn tại"));
         var gv = await _um.FindByIdAsync(req.GiangVienId);
         if (gv == null || !await _um.IsInRoleAsync(gv, "GiangVien")) return BadRequest(new ThongBao("Giảng viên không hợp lệ"));
-        if ((await _repo.GetAllAsync()).Any(l => l.Id != id && l.MaLop == req.MaLop.Trim()))
+        if ((await _repo.GetAllAsync()).Any(l => l.Id != id && l.MaLop.Equals(req.MaLop.Trim(), StringComparison.OrdinalIgnoreCase)))
             return Conflict(new ThongBao($"Mã lớp '{req.MaLop}' đã tồn tại"));
         return null;
     }

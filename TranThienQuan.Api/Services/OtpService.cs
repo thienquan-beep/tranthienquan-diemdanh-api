@@ -39,6 +39,9 @@ public class OtpService
             $"<p>Xin chào {u.HoTen},</p><p>Mã OTP để {viec} của bạn là: <b>{ma}</b></p><p>Mã có hiệu lực trong 5 phút.</p>");
     }
 
+    public Task<bool> CoMaAsync(User u, string mucDich) =>
+        _db.OtpCodes.AnyAsync(o => o.UserId == u.Id && o.MucDich == mucDich);
+
     public async Task<KetQuaOtp> KiemTraAsync(User u, string mucDich, string ma)
     {
         var otp = await _db.OtpCodes.FirstOrDefaultAsync(o => o.UserId == u.Id && o.MucDich == mucDich);

@@ -33,7 +33,7 @@ public class MonHocController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Add(MonHocRequest req)
     {
-        if ((await _repo.GetAllAsync()).Any(m => m.MaMon == req.MaMon.Trim()))
+        if ((await _repo.GetAllAsync()).Any(m => m.MaMon.Equals(req.MaMon.Trim(), StringComparison.OrdinalIgnoreCase)))
             return Conflict(new ThongBao($"Mã môn '{req.MaMon}' đã tồn tại"));
         var m = new MonHoc { MaMon = req.MaMon.Trim(), TenMon = req.TenMon.Trim(), SoTinChi = req.SoTinChi };
         await _repo.AddAsync(m);
@@ -46,7 +46,7 @@ public class MonHocController : ControllerBase
     {
         var m = await _repo.GetByIdAsync(id);
         if (m == null) return NotFound(new ThongBao("Không tìm thấy môn học"));
-        if ((await _repo.GetAllAsync()).Any(x => x.Id != id && x.MaMon == req.MaMon.Trim()))
+        if ((await _repo.GetAllAsync()).Any(x => x.Id != id && x.MaMon.Equals(req.MaMon.Trim(), StringComparison.OrdinalIgnoreCase)))
             return Conflict(new ThongBao($"Mã môn '{req.MaMon}' đã tồn tại"));
         m.MaMon = req.MaMon.Trim();
         m.TenMon = req.TenMon.Trim();

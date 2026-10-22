@@ -38,6 +38,23 @@ public class QuanTriApiTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task MaMonTrungKhacHoaThuongThi409()
+    {
+        // SQL Server so sánh không phân biệt hoa thường → phải báo 409, không để rơi vào lỗi unique index (500)
+        var c = await _f.DangNhapAsync("admin");
+        await Json(await c.PostAsJsonAsync($"{Goc}/mon-hoc", new { maMon = "KTMT", tenMon = "Kiến trúc máy tính", soTinChi = 3 }));
+        var r = await c.PostAsJsonAsync($"{Goc}/mon-hoc", new { maMon = "ktmt", tenMon = "Trùng", soTinChi = 3 });
+        Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
+
+        var gv = (await c.GetFromJsonAsync<JsonElement>($"{Goc}/nguoi-dung")).EnumerateArray()
+            .Single(u => u.GetProperty("userName").GetString() == "gv01").GetProperty("id").GetString();
+        var mon = (await c.GetFromJsonAsync<JsonElement>($"{Goc}/mon-hoc")).EnumerateArray()
+            .Single(m => m.GetProperty("maMon").GetString() == "KTMT").GetProperty("id").GetInt32();
+        var lop = await c.PostAsJsonAsync($"{Goc}/lop", new { maLop = "ltdd01", monHocId = mon, giangVienId = gv });
+        Assert.Equal(HttpStatusCode.Conflict, lop.StatusCode);
+    }
+
+    [Fact]
     public async Task SinhVienKhongTaoDuocMonHoc()
     {
         var c = await _f.DangNhapAsync("sv01");

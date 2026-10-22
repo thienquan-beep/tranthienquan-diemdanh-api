@@ -41,6 +41,13 @@ public class DiemDanhRepository : IDiemDanhRepository
         await _context.SaveChangesAsync();
     }
 
+    // Bỏ bản ghi lưu thất bại khỏi change tracker để lần SaveChanges sau không lưu lại nó
+    public Task BoTheoDoiAsync(DiemDanh diemDanh)
+    {
+        _context.Entry(diemDanh).State = EntityState.Detached;
+        return Task.CompletedTask;
+    }
+
     public async Task DeleteAsync(int id)
     {
         var diemDanh = await _context.DiemDanhs.FindAsync(id);

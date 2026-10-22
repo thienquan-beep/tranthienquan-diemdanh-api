@@ -134,7 +134,7 @@ public class DiemDanhApiTests : IClassFixture<ApiFactory>
         BuoiHoc buoi;
         using (var scope = _f.Services.CreateScope())
             buoi = await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().BuoiHocs.SingleAsync(b => b.Id == buoiId);
-        var cu = new QrTokenService(new FakeTimeProvider(DateTimeOffset.UtcNow.AddSeconds(-65))).TaoPayload(buoi);
+        var cu = new QrTokenService(new FakeTimeProvider(DateTimeOffset.UtcNow.AddSeconds(-95))).TaoPayload(buoi);
 
         var r = await QuetAsync(await _f.DangNhapAsync("sv01"), cu, 10);
         Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
