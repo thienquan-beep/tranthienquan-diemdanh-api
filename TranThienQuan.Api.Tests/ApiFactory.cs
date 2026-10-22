@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using TranThienQuan.Api.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +37,13 @@ public class ApiFactory : WebApplicationFactory<Program>
         var c = CreateClient();
         var dn = await c.PostAsJsonAsync("/api/tranthienquan/auth/dang-nhap", new { userName, password = matKhau });
         dn.EnsureSuccessStatusCode();
-        var r = await c.PostAsJsonAsync("/api/tranthienquan/auth/xac-nhan-dang-nhap", new { userName, otp = "123456" });
+        string otp;
+        using (var scope = Services.CreateScope())
+        {
+            var u = (await scope.ServiceProvider.GetRequiredService<UserManager<User>>().FindByNameAsync(userName))!;
+            otp = u.IsDemo ? "123456" : Email.LayOtp(u.Email!);
+        }
+        var r = await c.PostAsJsonAsync("/api/tranthienquan/auth/xac-nhan-dang-nhap", new { userName, otp });
         r.EnsureSuccessStatusCode();
         var token = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("token").GetString();
         c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
