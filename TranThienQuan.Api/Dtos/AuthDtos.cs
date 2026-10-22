@@ -26,6 +26,12 @@ public record SuaHoSoRequest(
     [Required(ErrorMessage = "Vui lòng nhập email"), EmailAddress(ErrorMessage = "Email không hợp lệ")] string Email,
     string? Mssv);
 
+public record GoogleRequest([Required(ErrorMessage = "Thiếu idToken")] string IdToken);
+
+public record RefreshTokenRequest([Required(ErrorMessage = "Thiếu refreshToken")] string RefreshToken);
+
+public record RefreshTokenResponse(string RefreshToken);
+
 public record AuthResponse(string Token, string VaiTro, string HoTen, string UserName);
 
 public record ThongBao(string Message);

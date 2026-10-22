@@ -57,6 +57,7 @@ builder.Services.AddScoped<ILopRepository, LopRepository>();
 builder.Services.AddScoped<IBuoiRepository, BuoiRepository>();
 builder.Services.AddScoped<IDiemDanhRepository, DiemDanhRepository>();
 builder.Services.AddSingleton<QrTokenService>();
+builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
 
 // Thư mục lưu ảnh selfie: wwwroot/uploads
 var webRoot = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");

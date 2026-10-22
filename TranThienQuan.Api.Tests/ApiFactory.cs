@@ -16,6 +16,7 @@ public class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _tenDb = "test-" + Guid.NewGuid();
     public FakeEmailSender Email { get; } = new();
+    public FakeGoogleValidator Google { get; } = new();
 
     private static readonly Dictionary<string, string> MatKhauDemo = new()
     {
@@ -27,7 +28,11 @@ public class ApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.UseSetting("TestDbName", _tenDb);
         builder.ConfigureLogging(l => l.ClearProviders());
-        builder.ConfigureTestServices(s => s.AddSingleton<IEmailSender>(Email));
+        builder.ConfigureTestServices(s =>
+        {
+            s.AddSingleton<IEmailSender>(Email);
+            s.AddSingleton<IGoogleTokenValidator>(Google);
+        });
     }
 
     // Đăng nhập tài khoản demo (OTP cố định 123456) và trả client đã gắn Bearer token

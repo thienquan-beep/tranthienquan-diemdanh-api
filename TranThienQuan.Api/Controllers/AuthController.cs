@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using TranThienQuan.Api.Dtos;
 using TranThienQuan.Api.Models;
 using TranThienQuan.Api.Services;
@@ -11,15 +14,21 @@ namespace TranThienQuan.Api.Controllers;
 [Route("api/tranthienquan/auth")]
 public class AuthController : ControllerBase
 {
+    private static readonly TimeSpan HanRefreshToken = TimeSpan.FromDays(30);
+
     private readonly UserManager<User> _um;
     private readonly OtpService _otp;
     private readonly JwtService _jwt;
+    private readonly ApplicationDbContext _db;
+    private readonly IGoogleTokenValidator _google;
 
-    public AuthController(UserManager<User> um, OtpService otp, JwtService jwt)
+    public AuthController(UserManager<User> um, OtpService otp, JwtService jwt, ApplicationDbContext db, IGoogleTokenValidator google)
     {
         _um = um;
         _otp = otp;
         _jwt = jwt;
+        _db = db;
+        _google = google;
     }
 
     [HttpPost("dang-ky")]
@@ -99,6 +108,79 @@ public class AuthController : ControllerBase
         var kq = await _um.UpdateAsync(u);
         if (!kq.Succeeded) return BadRequest(new ThongBao(kq.Errors.First().Description));
         return Ok(await ToDtoAsync(_um, u));
+    }
+
+    // Đăng ký / đăng nhập bằng Google (OAuth2.0): tài khoản mới mặc định là SinhVien
+    [HttpPost("google")]
+    public async Task<IActionResult> Google(GoogleRequest req)
+    {
+        var kq = await _google.KiemTraAsync(req.IdToken);
+        if (kq == null) return Unauthorized(new ThongBao("Đăng nhập Google thất bại"));
+        var (email, hoTen) = kq.Value;
+
+        var u = await _um.FindByEmailAsync(email);
+        if (u == null)
+        {
+            u = new User { UserName = await TaoUserNameAsync(email), Email = email, EmailConfirmed = true, HoTen = hoTen };
+            var tao = await _um.CreateAsync(u);
+            if (!tao.Succeeded) return BadRequest(new ThongBao(tao.Errors.First().Description));
+            await _um.AddToRoleAsync(u, "SinhVien");
+        }
+        if (u.LockoutEnd > DateTimeOffset.UtcNow) return StatusCode(403, new ThongBao("Tài khoản đã bị khóa"));
+        return Ok(await TaoAuthResponseAsync(u));
+    }
+
+    private async Task<string> TaoUserNameAsync(string email)
+    {
+        var goc = new string(email.Split('@')[0].Where(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-').ToArray());
+        if (goc.Length == 0) goc = "google";
+        var ten = goc;
+        for (var i = 1; await _um.FindByNameAsync(ten) != null; i++) ten = goc + i;
+        return ten;
+    }
+
+    // Bật đăng nhập khuôn mặt: cấp refresh token dài hạn, app lưu trong secure storage
+    [Authorize]
+    [HttpPost("khuon-mat/bat")]
+    public async Task<IActionResult> BatKhuonMat()
+    {
+        var u = await _um.FindByIdAsync(User.FindFirst("sub")!.Value);
+        if (u == null) return Unauthorized();
+        await ThuHoiRefreshTokenAsync(u.Id);
+        var token = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(64));
+        _db.RefreshTokens.Add(new RefreshToken { UserId = u.Id, Token = token, HetHan = DateTime.UtcNow + HanRefreshToken });
+        u.FaceLoginEnabled = true;
+        await _db.SaveChangesAsync();
+        return Ok(new RefreshTokenResponse(token));
+    }
+
+    [HttpPost("khuon-mat/dang-nhap")]
+    public async Task<IActionResult> DangNhapKhuonMat(RefreshTokenRequest req)
+    {
+        var rt = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.Token == req.RefreshToken);
+        var u = rt == null ? null : await _um.FindByIdAsync(rt.UserId);
+        if (rt == null || rt.DaThuHoi || rt.HetHan < DateTime.UtcNow || u == null || !u.FaceLoginEnabled)
+            return Unauthorized(new ThongBao("Phiên đăng nhập khuôn mặt không hợp lệ"));
+        if (u.LockoutEnd > DateTimeOffset.UtcNow) return StatusCode(403, new ThongBao("Tài khoản đã bị khóa"));
+        return Ok(await TaoAuthResponseAsync(u));
+    }
+
+    [Authorize]
+    [HttpPost("khuon-mat/tat")]
+    public async Task<IActionResult> TatKhuonMat()
+    {
+        var u = await _um.FindByIdAsync(User.FindFirst("sub")!.Value);
+        if (u == null) return Unauthorized();
+        await ThuHoiRefreshTokenAsync(u.Id);
+        u.FaceLoginEnabled = false;
+        await _db.SaveChangesAsync();
+        return Ok(new ThongBao("Đã tắt đăng nhập bằng khuôn mặt"));
+    }
+
+    private async Task ThuHoiRefreshTokenAsync(string userId)
+    {
+        foreach (var r in await _db.RefreshTokens.Where(r => r.UserId == userId && !r.DaThuHoi).ToListAsync())
+            r.DaThuHoi = true;
     }
 
     private IActionResult? KiemTraChan(User u)
