@@ -22,6 +22,13 @@ public record DiemDanhDto(int? Id, int BuoiId, string SinhVienId, string HoTen, 
     double? Lat, double? Lng, double? KhoangCachMet, string? CachThuc, string? TrangThai, string? AnhSelfieUrl,
     bool NghiVan, string? MaThietBi, string? TenMon, DateTime? Ngay);
 
+public record DoiChieuRequest([Range(0, 1000, ErrorMessage = "Sĩ số thực tế phải từ 0 đến 1000")] int SiSoThucTe);
+
+public record LuotNghiVan(DiemDanhDto DiemDanh, int Diem, List<string> LyDo);
+
+public record KetQuaDoiChieu(int SiSoThucTe, int SoDaDiemDanh, int ChenhLech, string KetLuan, string ThongBao,
+    List<LuotNghiVan> DanhSachNghiVan);
+
 public record DiemDanhTayRequest([Required(ErrorMessage = "Vui lòng chọn sinh viên")] string SinhVienId,
     [Required(ErrorMessage = "Vui lòng chọn trạng thái")] string TrangThai);
 

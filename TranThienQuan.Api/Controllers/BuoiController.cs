@@ -160,6 +160,33 @@ public class BuoiController : ControllerBase
         return Ok(DiemDanhMap.ToDto((await _ddRepo.GetByIdAsync(d.Id))!));
     }
 
+    // Tính năng mới: đối chiếu sĩ số thực tế với số đã điểm danh để phát hiện điểm danh hộ
+    [HttpPost("buoi/{id}/doi-chieu")]
+    public async Task<IActionResult> DoiChieu(int id, DoiChieuRequest req)
+    {
+        var (b, loi) = await LayBuoiCuaToiAsync(id);
+        if (loi != null) return loi;
+        b!.SiSoThucTe = req.SiSoThucTe;
+        await _buoiRepo.UpdateAsync(b);
+
+        var banGhi = await _ddRepo.GetCuaBuoiAsync(id);
+        var coMat = banGhi.Count(d => TrangThaiDiemDanh.LaCoMat(d.TrangThai));
+        var chenhLech = coMat - req.SiSoThucTe;
+        var (ketLuan, thongBao) = chenhLech switch
+        {
+            0 => ("Khop", $"Sĩ số chuẩn: {coMat}/{req.SiSoThucTe}"),
+            > 0 => ("DuNguoi", $"Có thể có điểm danh hộ: dư {chenhLech} người"),
+            _ => ("ThieuNguoi", $"Còn {-chenhLech} người có mặt chưa điểm danh"),
+        };
+        var nghiVan = banGhi
+            .Select(d => (d, kq: ChamNghiVan.Cham(d, b, banGhi)))
+            .Where(x => x.kq.diem > 0)
+            .OrderByDescending(x => x.kq.diem)
+            .Select(x => new LuotNghiVan(DiemDanhMap.ToDto(x.d), x.kq.diem, x.kq.lyDo))
+            .ToList();
+        return Ok(new KetQuaDoiChieu(req.SiSoThucTe, coMat, chenhLech, ketLuan, thongBao, nghiVan));
+    }
+
     private async Task<(DiemDanh? d, IActionResult? loi)> LayBanGhiCuaToiAsync(int id)
     {
         var d = await _ddRepo.GetByIdAsync(id);

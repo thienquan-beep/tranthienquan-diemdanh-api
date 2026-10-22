@@ -190,6 +190,38 @@ public class DiemDanhApiTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task DoiChieuSiSoPhatHienDiemDanhHo()
+    {
+        var (gv, buoiId) = await MoBuoiAsync();
+        var payload = await PayloadAsync(gv, buoiId);
+        await Json(await QuetAsync(await _f.DangNhapAsync("sv01"), payload, 10, "may-a"));
+        await Json(await QuetAsync(await _f.DangNhapAsync("sv02"), payload, 10, "may-chung"));
+        await Json(await QuetAsync(await _f.DangNhapAsync("sv03"), payload, 10, "may-chung"));
+
+        var du = await Json(await gv.PostAsJsonAsync($"{Goc}/buoi/{buoiId}/doi-chieu", new { siSoThucTe = 2 }));
+        Assert.Equal("DuNguoi", du.GetProperty("ketLuan").GetString());
+        Assert.Equal(1, du.GetProperty("chenhLech").GetInt32());
+        Assert.Equal("Có thể có điểm danh hộ: dư 1 người", du.GetProperty("thongBao").GetString());
+        var dauTien = du.GetProperty("danhSachNghiVan")[0];
+        Assert.StartsWith("Cùng thiết bị", dauTien.GetProperty("lyDo")[0].GetString());
+        Assert.Equal(2, du.GetProperty("danhSachNghiVan").GetArrayLength());
+
+        var khop = await Json(await gv.PostAsJsonAsync($"{Goc}/buoi/{buoiId}/doi-chieu", new { siSoThucTe = 3 }));
+        Assert.Equal("Khop", khop.GetProperty("ketLuan").GetString());
+        Assert.Equal("Sĩ số chuẩn: 3/3", khop.GetProperty("thongBao").GetString());
+
+        var thieu = await Json(await gv.PostAsJsonAsync($"{Goc}/buoi/{buoiId}/doi-chieu", new { siSoThucTe = 5 }));
+        Assert.Equal("ThieuNguoi", thieu.GetProperty("ketLuan").GetString());
+        Assert.Equal("Còn 2 người có mặt chưa điểm danh", thieu.GetProperty("thongBao").GetString());
+
+        var buoi = (await gv.GetFromJsonAsync<JsonElement>($"{Goc}/buoi/lop/{await LopLtddAsync(gv)}")).EnumerateArray()
+            .Single(b => b.GetProperty("id").GetInt32() == buoiId);
+        Assert.Equal(5, buoi.GetProperty("siSoThucTe").GetInt32());
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await gv.PostAsJsonAsync($"{Goc}/buoi/{buoiId}/doi-chieu", new { siSoThucTe = -1 })).StatusCode);
+    }
+
+    [Fact]
     public async Task GiangVienSuaXoaBanGhiVaBuoi()
     {
         var (gv, buoiId) = await MoBuoiAsync();
