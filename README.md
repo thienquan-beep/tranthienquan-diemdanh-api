@@ -9,7 +9,8 @@ App di động (Flutter) điểm danh sinh viên bằng **mã QR đổi mỗi 90
 
 ## Đầu API
 
-- Swagger (API đang chạy): `https://<ten-site>.runasp.net/swagger` ← *điền sau khi deploy*
+- **Swagger (API đang chạy):** http://tranthienquan.somee.com/swagger
+- **Đầu API:** `http://tranthienquan.somee.com/api/tranthienquan` (hosting Somee.com, SQL Server)
 - Mọi API nằm dưới tiền tố riêng: `/api/tranthienquan/...`
 
 ## Tài khoản demo
@@ -86,7 +87,7 @@ docs/      thiết kế và kế hoạch
 
 1. Copy `mobile/.env.example` thành `mobile/.env`, sửa `API_URL`:
    - máy ảo + backend trên laptop: `http://10.0.2.2:5080/api/tranthienquan`
-   - điện thoại thật: `https://<ten-site>.runasp.net/api/tranthienquan`
+   - API đã deploy (máy ảo hoặc điện thoại thật): `http://tranthienquan.somee.com/api/tranthienquan`
 2. `flutter pub get`, chọn thiết bị và Run.
 3. Đăng nhập Google: tạo OAuth Client ID loại **Android** (package `vn.hutech.tranthienquan.tranthienquan` + SHA-1) và loại **Web**, điền Web Client ID vào `GOOGLE_SERVER_CLIENT_ID` (app) và `Google:WebClientId` (backend).
 
