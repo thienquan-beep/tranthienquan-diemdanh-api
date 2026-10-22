@@ -7,6 +7,7 @@ using TranThienQuan.Api.Dtos;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TranThienQuan.Api.Models;
+using TranThienQuan.Api.Repositories;
 using TranThienQuan.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,8 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<OtpService>();
+builder.Services.AddScoped<IMonHocRepository, MonHocRepository>();
+builder.Services.AddScoped<ILopRepository, LopRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
 // Chưa cấu hình SMTP thì ghi OTP ra log
 if (string.IsNullOrEmpty(builder.Configuration["Email:SmtpHost"]))
