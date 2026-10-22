@@ -4,10 +4,10 @@ using TranThienQuan.Api.Models;
 
 namespace TranThienQuan.Api.Services;
 
-// Mã QR đổi mỗi 30 giây: "TTQ|{buoiId}|{token}", token = HMAC theo khung thời gian
+// Mã QR đổi mỗi 90 giây: "TTQ|{buoiId}|{token}", token = HMAC theo khung thời gian
 public class QrTokenService
 {
-    public const int ChuKyGiay = 30;
+    public const int ChuKyGiay = 90;
     private const string TienTo = "TTQ";
     private readonly TimeProvider _gio;
 
@@ -26,12 +26,12 @@ public class QrTokenService
 
     public int ConLaiGiay() => ChuKyGiay - (int)(_gio.GetUtcNow().ToUnixTimeSeconds() % ChuKyGiay);
 
-    // Chấp nhận khung hiện tại và 2 khung trước (60–90 giây): sau khi quét, sinh viên còn
+    // Chấp nhận khung hiện tại và 1 khung trước (90–180 giây): sau khi quét, sinh viên còn
     // xác thực khuôn mặt, chụp selfie, lấy GPS rồi mới gửi
     public bool KiemTra(BuoiHoc b, string token)
     {
         var slot = SlotHienTai();
-        return token == Token(b, slot) || token == Token(b, slot - 1) || token == Token(b, slot - 2);
+        return token == Token(b, slot) || token == Token(b, slot - 1);
     }
 
     public static bool TachPayload(string payload, out int buoiId, out string token)

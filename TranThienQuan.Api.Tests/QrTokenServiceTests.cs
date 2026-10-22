@@ -27,30 +27,30 @@ public class QrTokenServiceTests
     }
 
     [Fact]
-    public void TokenKhungTruocVanHopLe()
+    public void CungKhung90GiayThiCungPayload()
     {
-        var s = new QrTokenService(_gio);
-        var token = Token(s.TaoPayload(_buoi));
-        _gio.Advance(TimeSpan.FromSeconds(30));
-        Assert.True(s.KiemTra(_buoi, token));
+        var s = new QrTokenService(_gio); // 08:00:05, khung 08:00:00–08:01:30
+        var a = s.TaoPayload(_buoi);
+        _gio.Advance(TimeSpan.FromSeconds(80));
+        Assert.Equal(a, s.TaoPayload(_buoi));
     }
 
     [Fact]
-    public void TokenHaiKhungTruocVanHopLe()
+    public void TokenKhungTruocVanHopLe()
     {
         // Sinh viên cần thời gian xác thực khuôn mặt + selfie + GPS sau khi quét
         var s = new QrTokenService(_gio);
         var token = Token(s.TaoPayload(_buoi));
-        _gio.Advance(TimeSpan.FromSeconds(60));
+        _gio.Advance(TimeSpan.FromSeconds(90));
         Assert.True(s.KiemTra(_buoi, token));
     }
 
     [Fact]
-    public void TokenBaKhungTruocHetHan()
+    public void TokenHaiKhungTruocHetHan()
     {
         var s = new QrTokenService(_gio);
         var token = Token(s.TaoPayload(_buoi));
-        _gio.Advance(TimeSpan.FromSeconds(90));
+        _gio.Advance(TimeSpan.FromSeconds(180));
         Assert.False(s.KiemTra(_buoi, token));
     }
 
@@ -65,8 +65,8 @@ public class QrTokenServiceTests
     [Fact]
     public void ConLaiGiayDemNguoc()
     {
-        var s = new QrTokenService(_gio); // 08:00:05 → còn 25 giây
-        Assert.Equal(25, s.ConLaiGiay());
+        var s = new QrTokenService(_gio); // 08:00:05 → còn 85 giây
+        Assert.Equal(85, s.ConLaiGiay());
     }
 
     [Theory]
