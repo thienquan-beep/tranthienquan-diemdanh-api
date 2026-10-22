@@ -38,7 +38,7 @@ public class QrTokenServiceTests
     [Fact]
     public void TokenKhungTruocVanHopLe()
     {
-        // Sinh viên cần thời gian xác thực khuôn mặt + selfie + GPS sau khi quét
+        // Sinh viên cần thời gian đo tiếng ồn + lấy vị trí sau khi quét
         var s = new QrTokenService(_gio);
         var token = Token(s.TaoPayload(_buoi));
         _gio.Advance(TimeSpan.FromSeconds(90));

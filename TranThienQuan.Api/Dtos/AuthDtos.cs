@@ -28,13 +28,9 @@ public record SuaHoSoRequest(
 
 public record GoogleRequest([Required(ErrorMessage = "Thiếu idToken")] string IdToken);
 
-public record RefreshTokenRequest([Required(ErrorMessage = "Thiếu refreshToken")] string RefreshToken);
-
-public record RefreshTokenResponse(string RefreshToken);
-
 public record AuthResponse(string Token, string VaiTro, string HoTen, string UserName);
 
 public record ThongBao(string Message);
 
 public record NguoiDungDto(string Id, string UserName, string HoTen, string? Mssv, string? Email, string VaiTro,
-    bool BiKhoa, bool FaceLoginEnabled);
+    bool BiKhoa);

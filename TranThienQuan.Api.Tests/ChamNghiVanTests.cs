@@ -8,11 +8,39 @@ public class ChamNghiVanTests
     private static readonly DateTime MoLuc = new(2026, 10, 22, 7, 0, 0, DateTimeKind.Utc);
     private readonly BuoiHoc _buoi = new() { Id = 1, BanKinh = 100, MoLuc = MoLuc };
 
-    private static DiemDanh Qr(string svId, double khoangCach, string thietBi, int phutSauMo = 5, string hoTen = "") => new()
+    private static DiemDanh Qr(string svId, double khoangCach, string thietBi, int phutSauMo = 5, string hoTen = "",
+        double? doOn = null) => new()
     {
         SinhVienId = svId, KhoangCachMet = khoangCach, MaThietBi = thietBi, CachThuc = "QR", TrangThai = "CoMat",
-        ThoiDiem = MoLuc.AddMinutes(phutSauMo), SinhVien = new User { Id = svId, HoTen = hoTen },
+        ThoiDiem = MoLuc.AddMinutes(phutSauMo), SinhVien = new User { Id = svId, HoTen = hoTen }, DoOn = doOn,
     };
+
+    [Fact]
+    public void DoOnLechXaLopCongHai()
+    {
+        // Lớp ồn ~60 dB, một bạn quét ở nơi yên tĩnh 35 dB
+        var a = Qr("a", 10, "m1", doOn: 35);
+        var ds = new[] { a, Qr("b", 10, "m2", doOn: 58), Qr("c", 10, "m3", doOn: 60), Qr("d", 10, "m4", doOn: 63) };
+        var (diem, lyDo) = ChamNghiVan.Cham(a, _buoi, ds);
+        Assert.Equal(2, diem);
+        Assert.Equal("Độ ồn lệch 25 dB so với lớp (35 dB)", Assert.Single(lyDo));
+    }
+
+    [Fact]
+    public void DoOnGanLopKhongNghiVan()
+    {
+        var a = Qr("a", 10, "m1", doOn: 50);
+        var ds = new[] { a, Qr("b", 10, "m2", doOn: 58), Qr("c", 10, "m3", doOn: 60) };
+        Assert.Equal(0, ChamNghiVan.Cham(a, _buoi, ds).diem);
+    }
+
+    [Fact]
+    public void ItHonHaiLuotKhacThiKhongSoDoOn()
+    {
+        var a = Qr("a", 10, "m1", doOn: 30);
+        var ds = new[] { a, Qr("b", 10, "m2", doOn: 70) };
+        Assert.Equal(0, ChamNghiVan.Cham(a, _buoi, ds).diem);
+    }
 
     [Fact]
     public void TrongBanKinhKhongNghiVan()

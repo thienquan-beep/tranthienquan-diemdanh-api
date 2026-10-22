@@ -13,24 +13,20 @@ namespace TranThienQuan.Api.Controllers;
 [Authorize(Roles = "SinhVien")]
 public class SinhVienController : ControllerBase
 {
-    private const long AnhToiDa = 5 * 1024 * 1024;
-
     private readonly IBuoiRepository _buoiRepo;
     private readonly IDiemDanhRepository _ddRepo;
     private readonly ILopRepository _lopRepo;
     private readonly QrTokenService _qr;
     private readonly TimeProvider _gio;
-    private readonly IWebHostEnvironment _env;
 
     public SinhVienController(IBuoiRepository buoiRepo, IDiemDanhRepository ddRepo, ILopRepository lopRepo,
-        QrTokenService qr, TimeProvider gio, IWebHostEnvironment env)
+        QrTokenService qr, TimeProvider gio)
     {
         _buoiRepo = buoiRepo;
         _ddRepo = ddRepo;
         _lopRepo = lopRepo;
         _qr = qr;
         _gio = gio;
-        _env = env;
     }
 
     private string UserId => User.FindFirst("sub")!.Value;
@@ -47,8 +43,7 @@ public class SinhVienController : ControllerBase
     public async Task<IActionResult> LichSu() => Ok((await _ddRepo.GetCuaSinhVienAsync(UserId)).Select(DiemDanhMap.ToDto));
 
     [HttpPost("diem-danh")]
-    [RequestSizeLimit(AnhToiDa + 1024 * 1024)]
-    public async Task<IActionResult> Quet([FromForm] QuetDiemDanhForm form)
+    public async Task<IActionResult> Quet(QuetDiemDanhRequest form)
     {
         if (!QrTokenService.TachPayload(form.QrPayload, out var buoiId, out var token))
             return BadRequest(new ThongBao("Mã QR không hợp lệ"));
@@ -61,15 +56,6 @@ public class SinhVienController : ControllerBase
         if (await _ddRepo.TimAsync(b.Id, UserId) != null)
             return Conflict(new ThongBao("Bạn đã điểm danh buổi này"));
 
-        var anh = form.Selfie!;
-        if (!anh.ContentType.StartsWith("image/")) return BadRequest(new ThongBao("Ảnh selfie không hợp lệ"));
-        if (anh.Length > AnhToiDa) return BadRequest(new ThongBao("Ảnh selfie quá lớn (tối đa 5 MB)"));
-        var thuMuc = Path.Combine(_env.WebRootPath, "uploads");
-        Directory.CreateDirectory(thuMuc);
-        var tenFile = $"{Guid.NewGuid():N}{(anh.ContentType == "image/png" ? ".png" : ".jpg")}";
-        await using (var f = System.IO.File.Create(Path.Combine(thuMuc, tenFile)))
-            await anh.CopyToAsync(f);
-
         var khoangCach = KhoangCach.Met(b.Lat, b.Lng, form.Lat, form.Lng);
         var ngoaiBanKinh = khoangCach > b.BanKinh;
         var d = new DiemDanh
@@ -77,7 +63,7 @@ public class SinhVienController : ControllerBase
             BuoiHocId = b.Id, SinhVienId = UserId, ThoiDiem = _gio.GetUtcNow().UtcDateTime,
             Lat = form.Lat, Lng = form.Lng, KhoangCachMet = khoangCach, CachThuc = "QR",
             TrangThai = ngoaiBanKinh ? TrangThaiDiemDanh.CoMatNghiVan : TrangThaiDiemDanh.CoMat,
-            NghiVan = ngoaiBanKinh, AnhSelfie = $"/uploads/{tenFile}", MaThietBi = form.MaThietBi,
+            NghiVan = ngoaiBanKinh, DoOn = Math.Round(form.DoOn!.Value, 1), MaThietBi = form.MaThietBi,
         };
         try
         {
@@ -86,7 +72,6 @@ public class SinhVienController : ControllerBase
         catch (DbUpdateException)
         {
             // Hai lượt quét đồng thời: lượt sau vấp unique index (buổi, sinh viên)
-            System.IO.File.Delete(Path.Combine(thuMuc, tenFile));
             return Conflict(new ThongBao("Bạn đã điểm danh buổi này"));
         }
         return Ok(DiemDanhMap.ToDto((await _ddRepo.GetByIdAsync(d.Id))!));

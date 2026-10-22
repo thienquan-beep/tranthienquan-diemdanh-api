@@ -19,7 +19,7 @@ public record SuaBuoiRequest([Range(10, 5000, ErrorMessage = "Bán kính từ 10
 public record QrDto(string Payload, int ConLaiGiay);
 
 public record DiemDanhDto(int? Id, int BuoiId, string SinhVienId, string HoTen, string? Mssv, DateTime? ThoiDiem,
-    double? Lat, double? Lng, double? KhoangCachMet, string? CachThuc, string? TrangThai, string? AnhSelfieUrl,
+    double? Lat, double? Lng, double? KhoangCachMet, string? CachThuc, string? TrangThai, double? DoOn,
     bool NghiVan, string? MaThietBi, string? TenMon, DateTime? Ngay);
 
 public record DoiChieuRequest([Range(0, 1000, ErrorMessage = "Sĩ số thực tế phải từ 0 đến 1000")] int SiSoThucTe);
@@ -34,11 +34,9 @@ public record DiemDanhTayRequest([Required(ErrorMessage = "Vui lòng chọn sinh
 
 public record SuaDiemDanhRequest([Required(ErrorMessage = "Vui lòng chọn trạng thái")] string TrangThai);
 
-public class QuetDiemDanhForm
-{
-    [Required(ErrorMessage = "Thiếu mã QR")] public string QrPayload { get; set; } = "";
-    public double Lat { get; set; }
-    public double Lng { get; set; }
-    public string? MaThietBi { get; set; }
-    [Required(ErrorMessage = "Vui lòng chụp ảnh selfie")] public IFormFile? Selfie { get; set; }
-}
+public record QuetDiemDanhRequest(
+    [Required(ErrorMessage = "Thiếu mã QR")] string QrPayload,
+    double Lat,
+    double Lng,
+    string? MaThietBi,
+    [Required(ErrorMessage = "Vui lòng đo tiếng ồn khi điểm danh"), Range(0, 140, ErrorMessage = "Độ ồn không hợp lệ")] double? DoOn);

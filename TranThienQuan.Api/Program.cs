@@ -69,11 +69,6 @@ builder.Services.AddScoped<IDiemDanhRepository, DiemDanhRepository>();
 builder.Services.AddSingleton<QrTokenService>();
 builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
 
-// Thư mục lưu ảnh selfie: wwwroot/uploads
-var webRoot = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
-Directory.CreateDirectory(Path.Combine(webRoot, "uploads"));
-builder.Environment.WebRootPath = webRoot;
-builder.Environment.WebRootFileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(webRoot);
 builder.Services.AddSingleton(TimeProvider.System);
 // Chưa cấu hình SMTP thì ghi OTP ra log
 if (string.IsNullOrEmpty(builder.Configuration["Email:SmtpHost"]))
@@ -117,7 +112,6 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseStaticFiles();
 app.UseCors("ChoPhepTatCa");
 app.UseAuthentication();
 app.UseAuthorization();

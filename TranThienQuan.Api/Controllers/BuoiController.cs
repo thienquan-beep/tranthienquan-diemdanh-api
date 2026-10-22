@@ -64,7 +64,7 @@ public class BuoiController : ControllerBase
             return StatusCode(403, new ThongBao("Bạn không phụ trách lớp này"));
         var b = new BuoiHoc
         {
-            LopHocPhanId = req.LopId, MoLuc = BayGio, Lat = req.Lat, Lng = req.Lng, BanKinh = req.BanKinh ?? 100,
+            LopHocPhanId = req.LopId, MoLuc = BayGio, Lat = req.Lat, Lng = req.Lng, BanKinh = req.BanKinh ?? 300,
             KhoaBiMat = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)),
         };
         await _buoiRepo.AddAsync(b);

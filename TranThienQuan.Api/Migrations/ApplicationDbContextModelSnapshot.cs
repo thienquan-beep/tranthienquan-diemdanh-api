@@ -232,15 +232,15 @@ namespace TranThienQuan.Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AnhSelfie")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("BuoiHocId")
                         .HasColumnType("int");
 
                     b.Property<string>("CachThuc")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("DoOn")
+                        .HasColumnType("float");
 
                     b.Property<double?>("KhoangCachMet")
                         .HasColumnType("float");
@@ -367,36 +367,6 @@ namespace TranThienQuan.Api.Migrations
                     b.ToTable("OtpCodes", "identity");
                 });
 
-            modelBuilder.Entity("TranThienQuan.Api.Models.RefreshToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("DaThuHoi")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("HetHan")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Token")
-                        .IsUnique();
-
-                    b.ToTable("RefreshTokens", "identity");
-                });
-
             modelBuilder.Entity("TranThienQuan.Api.Models.User", b =>
                 {
                     b.Property<string>("Id")
@@ -414,9 +384,6 @@ namespace TranThienQuan.Api.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("FaceLoginEnabled")
                         .HasColumnType("bit");
 
                     b.Property<string>("HoTen")

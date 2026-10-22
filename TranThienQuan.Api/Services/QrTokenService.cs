@@ -27,7 +27,7 @@ public class QrTokenService
     public int ConLaiGiay() => ChuKyGiay - (int)(_gio.GetUtcNow().ToUnixTimeSeconds() % ChuKyGiay);
 
     // Chấp nhận khung hiện tại và 1 khung trước (90–180 giây): sau khi quét, sinh viên còn
-    // xác thực khuôn mặt, chụp selfie, lấy GPS rồi mới gửi
+    // đo tiếng ồn, lấy vị trí rồi mới gửi
     public bool KiemTra(BuoiHoc b, string token)
     {
         var slot = SlotHienTai();

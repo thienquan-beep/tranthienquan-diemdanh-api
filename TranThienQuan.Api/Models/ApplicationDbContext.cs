@@ -13,7 +13,6 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<BuoiHoc> BuoiHocs { get; set; }
     public DbSet<DiemDanh> DiemDanhs { get; set; }
     public DbSet<OtpCode> OtpCodes { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -28,6 +27,5 @@ public class ApplicationDbContext : IdentityDbContext<User>
         builder.Entity<DangKyLop>().HasOne(d => d.SinhVien).WithMany().OnDelete(DeleteBehavior.Cascade);
         builder.Entity<DiemDanh>().HasIndex(d => new { d.BuoiHocId, d.SinhVienId }).IsUnique();
         builder.Entity<DiemDanh>().HasOne(d => d.SinhVien).WithMany().OnDelete(DeleteBehavior.NoAction);
-        builder.Entity<RefreshToken>().HasIndex(r => r.Token).IsUnique();
     }
 }

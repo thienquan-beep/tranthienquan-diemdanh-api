@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -21,18 +20,8 @@ public class TrienKhaiTests
 {
     private const string Goc = "/api/tranthienquan";
 
-    private static MultipartFormDataContent Form(string payload, string lat, string lng)
-    {
-        var form = new MultipartFormDataContent
-        {
-            { new StringContent(payload), "qrPayload" }, { new StringContent(lat), "lat" },
-            { new StringContent(lng), "lng" }, { new StringContent("m1"), "maThietBi" },
-        };
-        var anh = new ByteArrayContent(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
-        anh.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        form.Add(anh, "selfie", "a.png");
-        return form;
-    }
+    private static JsonContent Form(string payload, double lat, double lng) =>
+        JsonContent.Create(new { qrPayload = payload, lat, lng, maThietBi = "m1", doOn = 55 });
 
     private static async Task<(HttpClient gv, string payload)> MoBuoiAsync(ApiFactory f)
     {
@@ -54,7 +43,7 @@ public class TrienKhaiTests
             using var f = new ApiFactory();
             var (_, payload) = await MoBuoiAsync(f);
             var sv = await f.DangNhapAsync("sv01");
-            var r = await sv.PostAsync($"{Goc}/diem-danh", Form(payload, "10.8233", "106.6297"));
+            var r = await sv.PostAsync($"{Goc}/diem-danh", Form(payload, 10.8233, 106.6297));
             var body = await r.Content.ReadFromJsonAsync<JsonElement>();
             Assert.Equal("CoMat", body.GetProperty("trangThai").GetString());
             Assert.InRange(body.GetProperty("khoangCachMet").GetDouble(), 15, 30);
@@ -90,7 +79,7 @@ public class TrienKhaiTests
         var svDuaTranh = bienThe.CreateClient();
         svDuaTranh.DefaultRequestHeaders.Authorization = sv.DefaultRequestHeaders.Authorization;
 
-        var r = await svDuaTranh.PostAsync($"{Goc}/diem-danh", Form(payload, "10.8231", "106.6297"));
+        var r = await svDuaTranh.PostAsync($"{Goc}/diem-danh", Form(payload, 10.8231, 106.6297));
         Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
         Assert.Equal("Bạn đã điểm danh buổi này",
             (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("message").GetString());

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +14,6 @@ public class DiemDanhApiTests : IClassFixture<ApiFactory>
     private const string Goc = "/api/tranthienquan";
     private const double LatLop = 10.8231, LngLop = 106.6297;
     private const double MotMetVi = 1 / 111195.0;
-    private static readonly byte[] AnhPng = Convert.FromBase64String(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
 
     private readonly ApiFactory _f;
 
@@ -46,26 +43,34 @@ public class DiemDanhApiTests : IClassFixture<ApiFactory>
     private static async Task<string> PayloadAsync(HttpClient gv, int buoiId) =>
         (await gv.GetFromJsonAsync<JsonElement>($"{Goc}/buoi/{buoiId}/qr")).GetProperty("payload").GetString()!;
 
-    private static Task<HttpResponseMessage> QuetAsync(HttpClient sv, string payload, double metVeBac, string maThietBi = "may-1")
-    {
-        var form = new MultipartFormDataContent
-        {
-            { new StringContent(payload), "qrPayload" },
-            { new StringContent((LatLop + metVeBac * MotMetVi).ToString(System.Globalization.CultureInfo.InvariantCulture)), "lat" },
-            { new StringContent(LngLop.ToString(System.Globalization.CultureInfo.InvariantCulture)), "lng" },
-            { new StringContent(maThietBi), "maThietBi" },
-        };
-        var anh = new ByteArrayContent(AnhPng);
-        anh.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        form.Add(anh, "selfie", "selfie.png");
-        return sv.PostAsync($"{Goc}/diem-danh", form);
-    }
+    private static Task<HttpResponseMessage> QuetAsync(HttpClient sv, string payload, double metVeBac, string maThietBi = "may-1",
+        double? doOn = 55) =>
+        sv.PostAsJsonAsync($"{Goc}/diem-danh", new { qrPayload = payload, lat = LatLop + metVeBac * MotMetVi, lng = LngLop, maThietBi, doOn });
 
     private static async Task<JsonElement> DanhSachAsync(HttpClient gv, int buoiId) =>
         await gv.GetFromJsonAsync<JsonElement>($"{Goc}/buoi/{buoiId}/diem-danh");
 
     private static JsonElement CuaSv(JsonElement ds, string hoTen) =>
         ds.EnumerateArray().Single(d => d.GetProperty("hoTen").GetString() == hoTen);
+
+    [Fact]
+    public async Task ThieuDoOnThi400()
+    {
+        var (gv, buoiId) = await MoBuoiAsync();
+        var r = await QuetAsync(await _f.DangNhapAsync("sv01"), await PayloadAsync(gv, buoiId), 10, doOn: null);
+        Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
+        Assert.Equal("Vui lòng đo tiếng ồn khi điểm danh", await Message(r));
+        await Json(await gv.PostAsync($"{Goc}/buoi/{buoiId}/dong", null));
+    }
+
+    [Fact]
+    public async Task MoBuoiKhongNhapBanKinhThiMacDinh300m()
+    {
+        var gv = await _f.DangNhapAsync("gv01");
+        var buoi = await Json(await gv.PostAsJsonAsync($"{Goc}/buoi", new { lopId = await LopLtddAsync(gv), lat = LatLop, lng = LngLop }));
+        Assert.Equal(300, buoi.GetProperty("banKinh").GetDouble());
+        await Json(await gv.PostAsync($"{Goc}/buoi/{buoi.GetProperty("id").GetInt32()}/dong", null));
+    }
 
     [Fact]
     public async Task QuyTrinhDiemDanhDayDu()
@@ -79,7 +84,7 @@ public class DiemDanhApiTests : IClassFixture<ApiFactory>
         var gan = await Json(await QuetAsync(sv01, payload, 50));
         Assert.Equal("CoMat", gan.GetProperty("trangThai").GetString());
         Assert.False(gan.GetProperty("nghiVan").GetBoolean());
-        Assert.False(string.IsNullOrEmpty(gan.GetProperty("anhSelfieUrl").GetString()));
+        Assert.Equal(55, gan.GetProperty("doOn").GetDouble());
 
         var xa = await Json(await QuetAsync(sv02, payload, 300, "may-2"));
         Assert.Equal("CoMatNghiVan", xa.GetProperty("trangThai").GetString());

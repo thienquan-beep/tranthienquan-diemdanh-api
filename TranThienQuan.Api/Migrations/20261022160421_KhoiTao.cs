@@ -38,7 +38,6 @@ namespace TranThienQuan.Api.Migrations
                     HoTen = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Mssv = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDemo = table.Column<bool>(type: "bit", nullable: false),
-                    FaceLoginEnabled = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -91,23 +90,6 @@ namespace TranThienQuan.Api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OtpCodes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RefreshTokens",
-                schema: "identity",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Token = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    HetHan = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DaThuHoi = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -330,7 +312,7 @@ namespace TranThienQuan.Api.Migrations
                     KhoangCachMet = table.Column<double>(type: "float", nullable: true),
                     CachThuc = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TrangThai = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AnhSelfie = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DoOn = table.Column<double>(type: "float", nullable: true),
                     MaThietBi = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NghiVan = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -455,13 +437,6 @@ namespace TranThienQuan.Api.Migrations
                 table: "MonHocs",
                 column: "MaMon",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RefreshTokens_Token",
-                schema: "identity",
-                table: "RefreshTokens",
-                column: "Token",
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -497,10 +472,6 @@ namespace TranThienQuan.Api.Migrations
 
             migrationBuilder.DropTable(
                 name: "OtpCodes",
-                schema: "identity");
-
-            migrationBuilder.DropTable(
-                name: "RefreshTokens",
                 schema: "identity");
 
             migrationBuilder.DropTable(

@@ -105,7 +105,6 @@ public class NguoiDungController : ControllerBase
         _db.DiemDanhs.RemoveRange(_db.DiemDanhs.Where(d => d.SinhVienId == id));
         _db.DangKyLops.RemoveRange(_db.DangKyLops.Where(d => d.SinhVienId == id));
         _db.OtpCodes.RemoveRange(_db.OtpCodes.Where(o => o.UserId == id));
-        _db.RefreshTokens.RemoveRange(_db.RefreshTokens.Where(r => r.UserId == id));
         await _db.SaveChangesAsync();
         await _um.DeleteAsync(u);
         return NoContent();

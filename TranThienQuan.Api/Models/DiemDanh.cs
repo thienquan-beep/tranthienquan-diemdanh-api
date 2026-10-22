@@ -13,7 +13,7 @@ public class DiemDanh
     public double? KhoangCachMet { get; set; }
     public string CachThuc { get; set; } = "QR";   // QR | Tay
     public string TrangThai { get; set; } = "CoMat"; // CoMat | CoMatNghiVan | Vang | CoPhep
-    public string? AnhSelfie { get; set; }
+    public double? DoOn { get; set; }        // Độ ồn (dB) đo lúc quét QR
     public string? MaThietBi { get; set; }
     public bool NghiVan { get; set; }
 }

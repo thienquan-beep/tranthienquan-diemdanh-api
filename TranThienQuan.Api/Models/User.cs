@@ -8,5 +8,4 @@ public class User : IdentityUser
     public string HoTen { get; set; } = "";
     public string? Mssv { get; set; }
     public bool IsDemo { get; set; }
-    public bool FaceLoginEnabled { get; set; }
 }

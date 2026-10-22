@@ -4,12 +4,12 @@ using System.Text.Json;
 
 namespace TranThienQuan.Api.Tests;
 
-public class KhuonMatGoogleApiTests : IClassFixture<ApiFactory>
+public class GoogleApiTests : IClassFixture<ApiFactory>
 {
     private const string Goc = "/api/tranthienquan";
     private readonly ApiFactory _f;
 
-    public KhuonMatGoogleApiTests(ApiFactory f) => _f = f;
+    public GoogleApiTests(ApiFactory f) => _f = f;
 
     private static async Task<string> Message(HttpResponseMessage r) =>
         (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("message").GetString()!;
@@ -18,41 +18,6 @@ public class KhuonMatGoogleApiTests : IClassFixture<ApiFactory>
     {
         Assert.True(r.IsSuccessStatusCode, $"{(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}");
         return await r.Content.ReadFromJsonAsync<JsonElement>();
-    }
-
-    [Fact]
-    public async Task BatKhuonMatRoiDangNhapBangRefreshToken()
-    {
-        var sv = await _f.DangNhapAsync("sv01");
-        var refresh = (await Json(await sv.PostAsync($"{Goc}/auth/khuon-mat/bat", null))).GetProperty("refreshToken").GetString();
-        Assert.True((await sv.GetFromJsonAsync<JsonElement>($"{Goc}/auth/toi")).GetProperty("faceLoginEnabled").GetBoolean());
-
-        var khach = _f.CreateClient();
-        var dn = await Json(await khach.PostAsJsonAsync($"{Goc}/auth/khuon-mat/dang-nhap", new { refreshToken = refresh }));
-        Assert.Equal("sv01", dn.GetProperty("userName").GetString());
-        Assert.Equal("SinhVien", dn.GetProperty("vaiTro").GetString());
-
-        await Json(await sv.PostAsync($"{Goc}/auth/khuon-mat/tat", null));
-        var sauTat = await khach.PostAsJsonAsync($"{Goc}/auth/khuon-mat/dang-nhap", new { refreshToken = refresh });
-        Assert.Equal(HttpStatusCode.Unauthorized, sauTat.StatusCode);
-        Assert.Equal("Phiên đăng nhập khuôn mặt không hợp lệ", await Message(sauTat));
-    }
-
-    [Fact]
-    public async Task BatLaiThiTokenCuMatHieuLuc()
-    {
-        var sv = await _f.DangNhapAsync("sv02");
-        var cu = (await Json(await sv.PostAsync($"{Goc}/auth/khuon-mat/bat", null))).GetProperty("refreshToken").GetString();
-        await Json(await sv.PostAsync($"{Goc}/auth/khuon-mat/bat", null));
-        var r = await _f.CreateClient().PostAsJsonAsync($"{Goc}/auth/khuon-mat/dang-nhap", new { refreshToken = cu });
-        Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
-    }
-
-    [Fact]
-    public async Task RefreshTokenRacThi401()
-    {
-        var r = await _f.CreateClient().PostAsJsonAsync($"{Goc}/auth/khuon-mat/dang-nhap", new { refreshToken = "rac" });
-        Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
     }
 
     [Fact]
